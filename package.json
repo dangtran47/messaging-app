@@ -7,7 +7,10 @@
     "start": "next start",
     "lint": "eslint ./ --ext .js,.ts,.tsx",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
-    "test": "jest --watch"
+    "test": "jest --watch",
+    "experimental:test": "jest -o",
+    "experimental:lint": "eslint -c .eslintrc $(git diff --name-only --diff-filter=ACMRTUXB main | grep  -E \"(.js$|.ts$|.tsx$)\")",
+    "experimental": "yarn experimental:test && yarn experimental:lint"
   },
   "dependencies": {
     "next": "12.0.10",
@@ -36,6 +39,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
+    "husky": "^7.0.4",
     "jest": "^27.5.1",
     "postcss": "^8.4.6",
     "prettier": "^2.5.1",
