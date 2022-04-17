@@ -13,6 +13,8 @@
     "experimental": "yarn experimental:test && yarn experimental:lint"
   },
   "dependencies": {
+    "clsx": "^1.1.1",
+    "lodash": "^4.17.21",
     "next": "12.0.10",
     "react": "17.0.2",
     "react-dom": "17.0.2",
@@ -21,6 +23,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.2",
     "@testing-library/react": "^12.1.2",
+    "@types/lodash": "^4.14.181",
     "@types/node": "^17.0.17",
     "@types/react": "17.0.39",
     "@types/styled-components": "^5.1.22",
