@@ -82,6 +82,7 @@ const generateClassName = (parameters: generateClassNameTypes) => clsx(
 interface InputProps {
   value: string
   onChange?: (value: string) => void
+  className?: string,
   intent?: Intent
   textAlign?: TextAlign
   size?: Size
@@ -93,6 +94,7 @@ const Input: React.FC<InputProps> = ({
   value,
   onChange,
   readOnly,
+  className = '',
   intent = 'primary',
   textAlign = 'right',
   size = 'md',
@@ -107,13 +109,13 @@ const Input: React.FC<InputProps> = ({
     }
   }
 
-  const className = useMemo(() => generateClassName({ intent, textAlign, size, variant }), [intent, textAlign, size, variant])
+  const innerClassName = useMemo(() => generateClassName({ intent, textAlign, size, variant }), [intent, textAlign, size, variant])
 
   return (
     <input
       value={innerValue}
       onChange={handleOnchange}
-      className={className}
+      className={clsx(innerClassName, className)}
       readOnly={readOnly}
     />
   )
