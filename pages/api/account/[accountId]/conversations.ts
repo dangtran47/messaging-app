@@ -1,54 +1,100 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { getClient } from "components/server/supabase";
+import withDefaultDb from "components/server/withDb";
+import withMethods from "components/server/withMethods";
+import { toBase64 } from "components/toBase64";
+import { ConversationDocument } from "data";
+import { readConversation } from "./conversation/[conversationId]";
 
-import * as repository from 'data/repository';
-import { nanoid } from 'nanoid';
-import { ConversationDocument, db } from 'data';
+export default withDefaultDb(
+  withMethods({
+    async POST(req, res) {
+      const p1 = req.query.accountId as string;
+      const p2 = req.query.with as string;
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  switch (req.method) {
-    case 'GET':
-      return getConversations(req, res);
+      const supabase = getClient();
 
-    case 'POST':
-      return createConversation(req, res);
+      // check for existing conversation
+      const existingConversation = await supabase
+        .from<ConversationDocument>("conversations")
+        .select("id")
+        .or(`and(participant_1.eq.${p1},participant_2.eq.${p2}),and(participant_1.eq.${p2},participant_2.eq.${p1})`);
 
-    default:
-      return res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
-}
+      if (existingConversation.error) {
+        console.error(existingConversation.error);
+        res.status(500).json({ error: existingConversation.error });
+        return;
+      }
 
-async function getConversations(req: NextApiRequest, res: NextApiResponse) {
-  await repository.init();
+      if (existingConversation.data) {
+        // return existing conversation
+        const { id } = existingConversation.data[0];
+        const conversation = await readConversation(id);
+        res.status(200).json(conversation);
+        return;
+      }
 
-  try {
-    const accountId = req.query.accountId as string;
-    const cursor = req.query.cursor as string;
-    let sort = req.query.sort as repository.SORT_INDICATOR;
+      const { data, error } = await supabase.from<ConversationDocument>("conversations").insert({
+        participant_1: p1,
+        participant_2: p2,
+      });
 
-    if (sort !== 'NEWEST_FIRST' && sort !== 'OLDEST_FIRST') {
-      sort = 'NEWEST_FIRST';
-    }
+      if (!data) {
+        console.error(error);
+        res.status(500).json({ error });
+        return;
+      }
 
-    const pageSize = Number.parseInt(req.query.pageSize as string, 10) || 10;
+      console.log(data);
 
-    const result = await repository.getConversations(accountId, pageSize, sort, cursor);
+      const { id } = data[0];
+      const conversation = await readConversation(id);
+      res.status(200).json(conversation);
+    },
 
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(400).json({ message: error });
-  }
-}
+    async GET(req, res) {
+      const accountId = req.query.accountId as string;
+      const pageSize = (req.query.pageSize as string) || "10";
 
-// create Conversation
-async function createConversation(req: NextApiRequest, res: NextApiResponse) {
-  const user1 = req.query.accountId as string;
-  const user2 = req.query.with as string;
+      const supabase = getClient();
 
-  if (user1 === user2) {
-    return res.status(400).json({ message: 'You can\'t chat with yourself' });
-  }
+      // check for existing conversation
+      const conversations = await supabase
+        .from<ConversationDocument>("conversations")
+        .select("id")
+        .or(`participant_1.eq.${accountId},participant_2.eq.${accountId}`)
+        .order("id", { ascending: false })
+        .limit(Number.parseInt(pageSize));
 
-  const conversation = await repository.createNewConversation(user1, user2);
+      if (conversations.error) {
+        console.error(conversations.error);
+        res.status(500).json({ error: conversations.error });
+        return;
+      }
 
-  return res.status(201).json({ data: conversation });
-}
+      if (!conversations.data) {
+        res.status(200).json({
+          rows: [],
+          sort: "NEWEST_FIRST",
+        });
+        return;
+      }
+
+      const rows = await Promise.all(conversations.data.map(({ id }) => readConversation(id)));
+
+      if (!rows[0]) {
+        res.status(200).json({
+          rows: [],
+          sort: "NEWEST_FIRST",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        sort: "NEWEST_FIRST",
+        rows,
+        cursor_next: toBase64(JSON.stringify({ sort: "NEWEST_FIRST", lastSeen: rows[0].id })),
+        cursor_prev: toBase64(JSON.stringify({ sort: "OLDEST_FIRST", lastSeen: rows[rows.length - 1].id })),
+      });
+    },
+  })
+);
