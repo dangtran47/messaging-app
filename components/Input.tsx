@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useMemo, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import reduce from 'lodash/fp/reduce'
 import concat from 'lodash/fp/concat'
 
@@ -37,6 +37,8 @@ const generateSizing = ({ size }: generateClassNameTypes) => {
   switch (size) {
     case 'md':
       return ['h-8', 'w-52']
+    case 'lg':
+      return ['w-full', 'h-10']
     default:
       return []
   }
@@ -46,6 +48,8 @@ const generateSpacing = ({ size }: generateClassNameTypes) => {
   switch (size) {
     case 'md':
       return ['p-2']
+    case 'lg':
+      return ['p-4']
     default:
       return []
   }
@@ -88,6 +92,8 @@ interface InputProps {
   size?: Size
   readOnly?: boolean
   variant?: Variant
+  placeholder?: string
+  onKeyDown?: (key: string) => void
 }
 
 const Input: React.FC<InputProps> = ({
@@ -99,6 +105,8 @@ const Input: React.FC<InputProps> = ({
   textAlign = 'right',
   size = 'md',
   variant = 'outlined',
+  placeholder = 'placeholer',
+  onKeyDown
 }) => {
   const [innerValue, setInnerValue] = useState(value)
 
@@ -109,6 +117,18 @@ const Input: React.FC<InputProps> = ({
     }
   }
 
+  const handleOnKeyDown = (e: any) => {
+    if (onKeyDown) {
+      onKeyDown(e.key)
+    }
+  }
+
+  useEffect(() => {
+    if(value === '') {
+      setInnerValue('')
+    }
+  }, [value])
+
   const innerClassName = useMemo(() => generateClassName({ intent, textAlign, size, variant }), [intent, textAlign, size, variant])
 
   return (
@@ -117,6 +137,8 @@ const Input: React.FC<InputProps> = ({
       onChange={handleOnchange}
       className={clsx(innerClassName, className)}
       readOnly={readOnly}
+      placeholder={placeholder}
+      onKeyDown={onKeyDown && handleOnKeyDown}
     />
   )
 }

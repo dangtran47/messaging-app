@@ -1,15 +1,27 @@
 import clsx from 'clsx'
 import { FaUserCircle } from 'react-icons/fa'
 
-const Card = ({ title = '', text = 'Click to start a conversation.', hover = false, onClick = () => {} }: { title?: string, text?: string, hover?: boolean, onClick?: () => void }) => {
+const Card = ({
+  title = '',
+  text = 'Click to start a conversation.',
+  isActive = false,
+  hover = false,
+  onClick = () => {},
+}: {
+  title?: string
+  text?: string
+  hover?: boolean
+  onClick?: () => void
+  isActive?: boolean
+}) => {
   return (
     <div
       className={clsx(
-        "text-gray flex gap-2 items-start cursor-pointer border-2 rounded w-72 h-16 px-2 py-1.5",
-        hover && "hover:bg-info-200 hover:border-info-300"
+        'text-gray flex gap-2 items-start cursor-pointer border-2 rounded w-72 h-16 px-2 py-1.5',
+        hover && 'hover:bg-info-200 hover:border-info-300',
+        isActive && 'bg-info-200 border-info-300'
       )}
-      onClick={onClick}
-    >
+      onClick={onClick}>
       <div>
         <FaUserCircle size={42} />
       </div>
