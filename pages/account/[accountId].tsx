@@ -13,7 +13,10 @@ const AccountDetails: NextPage<AppProps> = () => {
   const router = useRouter()
   const { accountId } = router.query
   const fetcher = (args: any) => fetch(args).then((res) => res.json())
-  const { data: conversations } = useSWR(accountId? `${host}/api/account/${accountId}/conversations`: null, fetcher)
+  const { data: conversations } = useSWR(
+    accountId ? `${host}/api/account/${accountId}/conversations` : null,
+    fetcher
+  )
   const [currentConversation, changeConversation] = useState('')
 
   useEffect(() => {
